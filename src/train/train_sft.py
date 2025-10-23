@@ -196,6 +196,7 @@ def train():
     trainer = LLamaVTrainer(
         model=model,
         args=training_args,
+        processing_class=processor,
         **data_module
     )
 

@@ -54,6 +54,26 @@ class TrainingArguments(HFTrainingArguments):
     num_lora_modules: int = -1
     use_liger: bool = True
 
+        # --- Soft-label numeric prediction (from ICCV2025 paper) ---
+    soft_label_enable: bool = field(
+        default=False,
+        metadata={"help": "Enable soft-labeling for numeric tokens (triangular/binomial/etc)."}
+    )
+    soft_label_eta: float = field(
+        default=0.08,
+        metadata={"help": "Eta (η) mixing weight between one-hot and proximity distribution."}
+    )
+    soft_label_lambda: float = field(
+        default=2.0,
+        metadata={"help": "Lambda (λ) multiplier applied to the numeric (soft) loss term."}
+    )
+    soft_label_dist: str = field(
+        default="triangular",
+        metadata={"help": "Proximity distribution to use for psi. Options: 'triangular','uniform','binomial','poisson'."}
+    )
+
+
+
 @dataclass
 class DPOArguments(DPOConfigTRL):
     cache_dir: Optional[str] = field(default=None)
