@@ -3,30 +3,38 @@
 MODEL_NAME="meta-llama/Llama-3.2-11B-Vision-Instruct"
 # MODEL_NAME="meta-llama/Llama-3.2-90B-Vision-Instruct"
 
-GLOBAL_BATCH_SIZE=128
-BATCH_PER_DEVICE=2
-NUM_DEVICES=8
-GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
-
 # LLaMA3.2-Vision Does not support flash-attnetion2.
 
+GLOBAL_BATCH_SIZE=128
+BATCH_PER_DEVICE=4
+NUM_DEVICES=4
+GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
+
 export PYTHONPATH=src:$PYTHONPATH
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7,8
+
 deepspeed src/train/train_sft.py \
     --use_liger True \
-    --deepspeed scripts/zero3_offload.json \
+    --lora_enable True \
+    --vision_lora False \
+    --use_dora False \
+    --lora_rank 64 \
+    --lora_alpha 64 \
+    --lora_dropout 0.05 \
+    --lora_namespan_exclude "['lm_head', 'embed_tokens']" \
+    --num_lora_modules 1 \
+    --deepspeed scripts/zero2.json \
     --model_id $MODEL_NAME \
-    --data_path /homes/55/junlin/mllm_benchmark_project/Qwen2-VL-Finetune/data/full_mix_training.json \
+    --data_path /homes/55/junlin/mllm_benchmark_project/Qwen2-VL-Finetune/data/cognition_training.json \
     --image_folder /homes/55/junlin/mllm_benchmark_project/Qwen2-VL-Finetune/data/cognition/cognition_images \
-    --lora_enable False \
     --freeze_img_projector False \
     --freeze_vision_tower False \
-    --freeze_llm False \
+    --freeze_llm True \
     --bf16 True \
-    --output_dir /scratch/local/ssd/junlin/models/Llama-3.2-11B-Vision-sft_mix \
+    --fp16 False \
+    --output_dir /scratch/local/ssd/junlin/models/Llama/Llama-3.2-11B-Vision-sft_1e-5 \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 1 \
-    --gradient_accumulation_steps 1 \
+    --per_device_train_batch_size $BATCH_PER_DEVICE \
+    --gradient_accumulation_steps $GRAD_ACCUM_STEPS \
     --learning_rate 1e-5 \
     --projector_lr 1e-5 \
     --vision_lr 2e-6 \
@@ -40,4 +48,4 @@ deepspeed src/train/train_sft.py \
     --report_to tensorboard \
     --lazy_preprocess True \
     --save_strategy no \
-    --dataloader_num_workers 4
+    --dataloader_num_workers 4 \
